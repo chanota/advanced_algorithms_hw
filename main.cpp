@@ -1,58 +1,36 @@
 #include <iostream>
 #include <vector>
 #include <set>
-#include <algorithm>  // for std::min_element
 
 using namespace std;
 
 // Graph is represented as an adjacency list
 using AdjList = vector<vector<int>>;
 
-// Computes the number of back arcs induced by adding node v at position pos
-int num_backarcs(const AdjList& graph, const vector<int>& arrangement, int v, int pos) {
-    int count = 0;
-    for (int i = 0; i < pos; i++) {
-        int w = arrangement[i];
-        if (find(graph[v].begin(), graph[v].end(), w) != graph[v].end()) {
-            count--;
-        } else if (find(graph[w].begin(), graph[w].end(), v) != graph[w].end()) {
-            count++;
-        }
-    }
-    return count;
-}
-
-// SortFAS algorithm
-void sortFAS(const AdjList& graph, vector<int>& arrangement) {
-    int n = graph.size();
-    vector<int> backarcs(n, 0);  // number of back arcs induced by each node in the current arrangement
-    for (int i = 0; i < n; i++) {
-        backarcs[arrangement[i]] = num_backarcs(graph, arrangement, arrangement[i], i);
-    }
-    for (int i = 1; i < n; i++) {
-        int v = arrangement[i];
-        int best_pos = i;
-        int min_backarcs = backarcs[v];
-        for (int j = i-1; j >= 0; j--) {
-            int w = arrangement[j];
-            int new_backarcs = backarcs[v] - (find(graph[v].begin(), graph[v].end(), w) != graph[v].end())
-                                              + (find(graph[w].begin(), graph[w].end(), v) != graph[w].end());
-            if (new_backarcs <= min_backarcs) {
-                best_pos = j;
-                min_backarcs = new_backarcs;
+vector<int> sortFAS(AdjList& graph, vector<int>& arrangement) {
+    vector<int> linear_arrangement = arrangement;
+    for (int v = linear_arrangement.size() - 1; v >= 0; v--) {
+        int back_arcs = 0;
+        int min_back_arcs = 0;
+        int best_pos = v;
+        for (int i = v - 1; i >= -1; i--) {
+            int u = (i == -1) ? -1 : linear_arrangement[i];
+            if (u != -1) {
+                if (find(graph[u].begin(), graph[u].end(), linear_arrangement[v]) != graph[u].end()) {
+                    back_arcs++;
+                } else if (find(graph[linear_arrangement[v]].begin(), graph[linear_arrangement[v]].end(), u) != graph[linear_arrangement[v]].end()) {
+                    back_arcs--;
+                }
+            }
+            if (back_arcs < min_back_arcs) {
+                min_back_arcs = back_arcs;
+                best_pos = i;
             }
         }
-        if (best_pos != i) {
-            arrangement.erase(arrangement.begin() + i);
-            arrangement.insert(arrangement.begin() + best_pos, v);
-            for (int j = i; j > best_pos; j--) {
-                backarcs[arrangement[j]] = backarcs[arrangement[j-1]] +
-                                            (find(graph[arrangement[j]].begin(), graph[arrangement[j]].end(), arrangement[j-1]) != graph[arrangement[j]].end())
-                                            - (find(graph[arrangement[j-1]].begin(), graph[arrangement[j-1]].end(), arrangement[j]) != graph[arrangement[j-1]].end());
-            }
-            backarcs[v] = min_backarcs;
-        }
+        linear_arrangement.insert(linear_arrangement.begin() + best_pos, linear_arrangement[v]);
+        linear_arrangement.erase(linear_arrangement.begin() + v + 1);
     }
+    return linear_arrangement;
 }
 
 // Given a sorted order of nodes and the original graph, computes a minimum feedback arc set
@@ -72,22 +50,20 @@ void computeFeedbackArcSet(vector<int>& arrangement, const AdjList& graph, set<p
 }
 
 int main() {
-    // Example graph
-    AdjList graph = {{1}, {2}, {3}, {0,1}};
-    vector<int> arrangement = {0, 1, 2, 3};  // initial linear arrangement
-
-    sortFAS(graph, arrangement);
-    cout << "Sorted order of nodes: ";
-    for (int v : arrangement) {
+    vector<vector<int>> graph = {{1}, {2}, {3}, {0, 1}, {5}, {6}, {4}};
+    vector<int> arrangement = {0, 1, 2, 3, 4, 5, 6};
+    // vector<vector<int>> graph = {{1}, {2}, {3}, {0, 1}};
+    // vector<int> arrangement = {0, 1, 2, 3};
+    vector<int> linear_arrangement = sortFAS(graph, arrangement);
+    for (int v : linear_arrangement) {
         cout << v << " ";
     }
-    cout << endl;
-
     set<pair<int, int>> feedbackSet;    
-    computeFeedbackArcSet(arrangement, graph, feedbackSet);
+    computeFeedbackArcSet(linear_arrangement, graph, feedbackSet);
     cout << "Feedback arc set: ";
     for (auto edge : feedbackSet) {
         cout << "(" << edge.first << ", " << edge.second << ") ";
     }
+    cout << endl;
     return 0;
 }
