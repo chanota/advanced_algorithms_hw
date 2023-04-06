@@ -90,9 +90,10 @@ bool FasSolution::BinarySearch(const vector<int> &array, int object, const int &
 }
 
 auto FasSolution::SortFAS() -> void {
-    for (int v = 0; v < linear_arrangement.size(); v++) {
+    for (int v = 0; v < nodes; v++) {
         int back_arcs = 0;
         int min_back_arcs = 0;
+        // position v. it's value is linear_arrangement[v]
         int best_pos = v;
         for (int i = v - 1; i > -1; i--) {
             int u = linear_arrangement[i];
@@ -100,7 +101,7 @@ auto FasSolution::SortFAS() -> void {
             if (BinarySearch(graph[u], linear_arrangement[v], edges_num[u])) {
                     back_arcs++;
                 //else if (find(graph[linear_arrangement[v]].begin(), graph[linear_arrangement[v]].end(), u) != graph[linear_arrangement[v]].end()) 
-                } else if (BinarySearch(graph[v], u, edges_num[v])) {
+                } else if (BinarySearch(graph[linear_arrangement[v]], u, edges_num[v])) {
                     back_arcs--;
                 }
             
@@ -177,18 +178,18 @@ int main() {
     // vector<vector<int>> graph = {{1}, {2}, {3}, {0, 1}, {5}, {6}, {4}};
     // vector<vector<int>> graph = {{1}, {2}, {3}, {0, 1}};
     // s.once_forward();
-    s.multiple_forward(-1);
+     s.multiple_forward(100);
 
     //const vector<int> &linear_arrangement = s.showarr(); 
-    //for (int v : linear_arrangement) {
-     //   cout << v << " ";
-    //}
+    for (int v : s.showarr()) {
+       cout << v << " ";
+    }
 
     const PairSet &feedbackSet = s.showfb();    
     cout << "Feedback arc set: ";
-    //for (auto edge : feedbackSet) {
-     //   cout << "(" << edge.first << ", " << edge.second << ") ";
-    //}
+    for (auto edge : feedbackSet) {
+        cout << "(" << edge.first << ", " << edge.second << ") ";
+    }
     cout << " size : " << s.showfbsize(); 
     cout << endl;
     cout << "run_times: " << s.showruntime() << endl;
