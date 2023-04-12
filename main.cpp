@@ -1,4 +1,4 @@
-#include "fas_solve.h"
+#include "fas_solver.h"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -9,192 +9,156 @@
 #include <chrono>
 #include <set>
 
-// using namespace std;
 
-// Graph is represented as an adjacency list
-// using AdjList = vector<vector<int>>;
-// using PairSet = set<pair<int, int>>; 
-
-FasSolution::FasSolution(const string input, const int nn, const int an):arcs(an), nodes(nn) {
-    runtimes = 0;
-    fbarcs_size = -1;
-    linear_arrangement.resize(nodes);
-    graph.reserve(nodes);
-    edges_num.reserve(nodes);
-    GetGraphInfo(input);
-    iota(linear_arrangement.begin(), linear_arrangement.end(), 0); 
+FasSolver::FasSolver(const string data_path, const int nn, const int an):num_arcs(an), num_nodes(nn) {
+    iterations = 0;
+    graph.reserve(num_nodes);
+    loadGraph(data_path);
+    linear_arrangement.resize(num_nodes);
+    iota(linear_arrangement.begin(), linear_arrangement.end(), 0);
 }
 
-FasSolution::FasSolution(AdjList g, const int nn, const int an):arcs(an), nodes(nn) {
-    runtimes = 0;
-    fbarcs_size = -1;
-    linear_arrangement.resize(nodes);
-    edges_num.reserve(nodes);
-    graph.reserve(nodes);
-    for (int i = 0; i < nodes; i++) {
-        edges_num[i] = g[i].size();
+// Load graph from txt file
+void FasSolver::loadGraph(const string &data_path) {
+    cout << "Loading graph from " << data_path << endl;
+    ifstream readtxt(data_path);
+    if (!readtxt) {
+        cerr << "Failed to open input file." << endl;
+        exit(1);
     }
-    graph = g;
-    iota(linear_arrangement.begin(), linear_arrangement.end(), 0); 
-}
-
-void FasSolution::GetGraphInfo(const string &path) {
     string txtline;
-    ifstream readtxt(path);
     int from, to;
-    int count = 0;
-    int oldfrom = -1;
-    int edges = 0;
-    while (getline(readtxt, txtline, ',')) {
-        istringstream line_f(txtline);
-        line_f >> from;
-        if (oldfrom == from || oldfrom == -1) {
-            edges += 1;
-
-        } else if (oldfrom != from) {
-            edges_num[oldfrom] = edges;
-            edges = 1;
-            oldfrom = from;
+    int edge_count = 0;
+    while (getline(readtxt, txtline)) {
+        stringstream ss(txtline);
+        string str_from, str_to;
+        if (getline(ss, str_from, ',') && getline(ss, str_to, ',')) {
+            from = stoi(str_from);
+            to = stoi(str_to);
+            graph[from].push_back(to);
+            edge_count++;   
         }
-        getline(readtxt, txtline);
-        istringstream line_t(txtline);
-        line_t >> to;
-        graph[from].push_back(to);
-        count++;
     }
-    arcs = count;
-    cout << "arcs count: " << arcs;
+    readtxt.close();
+    num_arcs = edge_count;
+    cout << "number of nodes: " << num_nodes << ", number of arcs: " << num_arcs << endl;
 }
 
-bool FasSolution::BinarySearch(const vector<int> &array, int object, const int &edg_n) {
-    if (edg_n) {
-        int f = 0;
-        int b = edg_n - 1;
-        int media = (f + b) / 2;
-        int flag = 0;
-        while (f <= b) {
-            if (array[media] > object) {
-                b = media - 1;
-            } else if (array[media] < object) {
-                f = media + 1;
-            } else {
-                flag = 1;
-                break;
-            }
-            media = (f + b) / 2;
+bool FasSolver::hasDirectedEdge(int u, int v, bool binary_search = true) {
+    if (binary_search) {
+        auto it = std::lower_bound(graph[u].begin(), graph[u].end(), v);
+        if (it != graph[u].end() && *it == v) {
+            return true;
+        } else {
+            return false;
         }
-        return flag; 
-    } 
-    return 0;
-    
+    } else {
+        return find(graph[u].begin(), graph[u].end(), v) != graph[u].end();
+    }
 }
 
-auto FasSolution::SortFAS() -> void {
-    for (int v = 0; v < nodes; v++) {
-        int back_arcs = 0;
-        int min_back_arcs = 0;
-        // position v. it's value is linear_arrangement[v]
-        int best_pos = v;
-        for (int i = v - 1; i > -1; i--) {
-            int u = linear_arrangement[i];
-            // if (find(graph[u].begin(), graph[u].end(), linear_arrangement[v]) != graph[u].end())
-            if (BinarySearch(graph[u], linear_arrangement[v], edges_num[u])) {
-                    back_arcs++;
-                //else if (find(graph[linear_arrangement[v]].begin(), graph[linear_arrangement[v]].end(), u) != graph[linear_arrangement[v]].end()) 
-                } else if (BinarySearch(graph[linear_arrangement[v]], u, edges_num[v])) {
-                    back_arcs--;
-                }
-            
-            // In case of a tie the leftmost position is taken.
-            if (back_arcs <= min_back_arcs) {
-                min_back_arcs = back_arcs;
-                best_pos = i;
+auto FasSolver::sortFAS() -> void {
+    // main loop over each element of linear_arrangement
+    for (int i = 1; i < num_nodes; i++) {
+        int curr = linear_arrangement[i];
+        int val = 0;
+        int min = 0;
+        int best_pos = i;
+        // check all candidate positions before i
+        for (int j = i - 1; j >= 0; j--) {
+            if (hasDirectedEdge(linear_arrangement[j], curr)) {
+                val++;
+            } else if (hasDirectedEdge(curr, linear_arrangement[j])) {
+                val--;
+            }
+            if (val <= min) {
+                min = val;
+                best_pos = j;
             }
         }
-        linear_arrangement.insert(linear_arrangement.begin() + best_pos, linear_arrangement[v]);
-        linear_arrangement.erase(linear_arrangement.begin() + v + 1);
+        // insert linear_arrangement[i] to the best position
+        linear_arrangement.insert(linear_arrangement.begin() + best_pos, curr);
+        linear_arrangement.erase(linear_arrangement.begin() + i + 1);
     }
 }
 
 
-// Given a sorted order of nodes and the original graph, computes a minimum feedback arc set
-// and stores it in the set `feedbackSet`.
-void FasSolution::ComputeFeedbackArcSet() {
-    int n = nodes;
-    fbarcs_size = 0;
-    vector<int> index(n, -1);
-    for (int i = 0; i < n; i++) {
+// store the feedback arc set based on current linear arrangement
+void FasSolver::computeFeedbackArcSet() {
+    fas_size = 0;
+    feedback_arc_set.clear();
+    vector<int> index(num_nodes, -1);
+    for (int i = 0; i < num_nodes; i++) {
         index[linear_arrangement[i]] = i;
     }
-    for (int u = 0; u < n; u++) {
+    for (int u = 0; u < num_nodes; u++) {
         for (int v : graph[u]) {
             if (index[u] < index[v]) 
                 continue;  // only consider edges from later nodes to earlier nodes
-            fbarcs_size += 1;
-            fbarc_set.emplace(u, v);  // add the edge to the feedback set if it's a feedback arc
+            fas_size += 1;
+            feedback_arc_set.emplace(u, v);  // add the edge to the feedback set if it's a feedback arc
         }
     }
 }
-// no checking mechanism for convergence. if want to know how many times should run for convergence, just use 
-// multiple_forward setting n = -1, without using once_forward.
-void FasSolution::once_forward() {
-   SortFAS();
-   if (runtimes)
-      PairSet().swap(fbarc_set);
-   ComputeFeedbackArcSet();
-   runtimes += 1;
-}
-void FasSolution::multiple_forward(int n) {
-    if (n != -1) {
-        for (int i = 0; i < n ; i++) {
-            runtimes += 1;
-            SortFAS();
+
+void FasSolver::runSortFAS(bool until_convergence = false, int max_iters = -1) {
+    // while new_fas_size < old_fas_size, keep running sortFAS
+    if (until_convergence) {
+        int old_fas_size = num_arcs + 1;
+        int new_fas_size = num_arcs;
+        while (new_fas_size < old_fas_size) {
+            old_fas_size = new_fas_size;
+            sortFAS();
+            computeFeedbackArcSet();
+            cout << "iter: " << iterations << ", fas size: " << fas_size << endl;
+            new_fas_size = fas_size;
+            iterations += 1;
+            if (iterations == max_iters) {
+                break;
+            }
         }
-        if (runtimes != n)
-            PairSet().swap(fbarc_set);
-        ComputeFeedbackArcSet();
     } else {
-        vector<int> oldarr;
-        do {
-            oldarr = linear_arrangement;
-            SortFAS();
-            runtimes += 1;
-        } while(oldarr != linear_arrangement);
-        if (runtimes != n)
-          PairSet().swap(fbarc_set);
-        ComputeFeedbackArcSet();
+        sortFAS();
+        computeFeedbackArcSet();
+        iterations += 1;
     }
-
 }
 
-int main() {
-    auto start = chrono::high_resolution_clock::now();
-    // const string path = "./source/enron.txt"; 
-    // FasSolution s(path, 69244);
-    // s.multiple_forward(-1);
-    //
-    AdjList graph = {{1,2}, {2}, {3}, {4,5,6}, {6}, {4,7}, {0}, {1,2}};
-    FasSolution s(graph, 8, 13);
-    // vector<vector<int>> graph = {{1}, {2}, {3}, {0, 1}, {5}, {6}, {4}};
-    // vector<vector<int>> graph = {{1}, {2}, {3}, {0, 1}};
-    // s.once_forward();
-     s.multiple_forward(100);
+int main(int argc, char **argv) {
+    auto start_time = chrono::high_resolution_clock::now();
+    // basename = argv[1], default: "wordassociation-2011"
+    // num_nodes = argv[2], default: 10617
+    string basename;
+    int num_nodes;
+    if (argc > 1) {
+        basename = argv[1];
+        num_nodes = stoi(argv[2]);
+    }
+    else {
+        basename = "wordassociation-2011";
+        num_nodes = 10617;
+    }
+    const string data_path = "./graph_datasets/" + basename + ".txt";
+    FasSolver fas_solver(data_path, num_nodes);
 
-    //const vector<int> &linear_arrangement = s.showarr(); 
-    for (int v : s.showarr()) {
-       cout << v << " ";
+    //fas_solver.runSortFAS();
+    fas_solver.runSortFAS(true, -1);
+
+    // show the linear arrangement
+    for (int v : fas_solver.getLinearArrangement()) {
+       std::cout << v << " ";
     }
 
-    const PairSet &feedbackSet = s.showfb();    
-    cout << "Feedback arc set: ";
+    // show the feedback arc set
+    const PairSet &feedbackSet = fas_solver.getFAS();    
+    std::cout << "\nFeedback arc set: ";
     for (auto edge : feedbackSet) {
-        cout << "(" << edge.first << ", " << edge.second << ") ";
+        std::cout << "(" << edge.first << ", " << edge.second << ") ";
     }
-    cout << " size : " << s.showfbsize(); 
-    cout << endl;
-    cout << "run_times: " << s.showruntime() << endl;
-    auto stop = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::microseconds>(stop - start);
-    cout << "run_time: " << duration.count() << " microseconds" << endl;
+    std::cout << "\nsize : " << fas_solver.getFASSize() << endl; 
+    std::cout << "iterations: " << fas_solver.getIterations() << endl;
+    auto end_time = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
+    std::cout << "run_time: " << duration.count() / 1000000.0 << " seconds" << endl;
     return 0;
 }

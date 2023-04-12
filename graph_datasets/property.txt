@@ -4,3 +4,6 @@ wordassociation-2011:
 enron:
     the number of nodes = 69,244
     the number of arcs  = 276,143
+example:
+    the number of nodes = 7
+    the number of arcs  = 8
