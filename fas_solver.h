@@ -4,15 +4,16 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <unordered_set>
 using namespace std;
-using AdjList = vector<vector<int>>;
+using AdjList = vector<unordered_set<int>>;
 using PairSet = set<pair<int, int>>;
 
 class FasSolver {
     public:
         FasSolver(const string data_path, int num_nodes);
         void loadGraph(const string &data_path);
-        bool hasDirectedEdge(int u, int v, bool binary_search = true);
+        bool hasDirectedEdge(int u, int v);
         void sortFAS();
         void runSortFAS(bool until_converge = false, int max_iters = -1);
         void computeFeedbackArcSet();

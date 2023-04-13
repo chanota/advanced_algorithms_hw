@@ -35,7 +35,7 @@ void FasSolver::loadGraph(const string &data_path) {
         if (getline(ss, str_from, ',') && getline(ss, str_to, ',')) {
             from = stoi(str_from);
             to = stoi(str_to);
-            graph[from].push_back(to);
+            graph[from].insert(to);
             edge_count++;   
         }
     }
@@ -44,17 +44,8 @@ void FasSolver::loadGraph(const string &data_path) {
     cout << "number of nodes: " << num_nodes << ", number of arcs: " << num_arcs << endl;
 }
 
-bool FasSolver::hasDirectedEdge(int u, int v, bool binary_search) {
-    if (binary_search) {
-        auto it = std::lower_bound(graph[u].begin(), graph[u].end(), v);
-        if (it != graph[u].end() && *it == v) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-        return find(graph[u].begin(), graph[u].end(), v) != graph[u].end();
-    }
+bool FasSolver::hasDirectedEdge(int u, int v) {
+    return graph[u].find(v) != graph[u].end();
 }
 
 void FasSolver::sortFAS() {
