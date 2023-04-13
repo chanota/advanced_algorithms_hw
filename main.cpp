@@ -66,10 +66,10 @@ void FasSolver::sortFAS() {
         int best_pos = i;
         // check all candidate positions before i
         for (int j = i - 1; j >= 0; j--) {
-            if (hasDirectedEdge(linear_arrangement[j], curr)) {
-                val++;
-            } else if (hasDirectedEdge(curr, linear_arrangement[j])) {
+            if (hasDirectedEdge(curr, linear_arrangement[j])) {
                 val--;
+            } else if (hasDirectedEdge(linear_arrangement[j], curr)) {
+                val++;
             }
             if (val <= min) {
                 min = val;
