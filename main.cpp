@@ -12,7 +12,7 @@
 
 FasSolver::FasSolver(const string data_path, const int nn):num_nodes(nn) {
     iterations = 0;
-    graph.reserve(num_nodes);
+    graph.resize(num_nodes);
     loadGraph(data_path);
     linear_arrangement.resize(num_nodes);
     iota(linear_arrangement.begin(), linear_arrangement.end(), 0);
@@ -141,8 +141,8 @@ int main(int argc, char **argv) {
     const string data_path = "./graph_datasets/" + basename + ".txt";
     FasSolver fas_solver(data_path, num_nodes);
 
-    //fas_solver.runSortFAS();
-    fas_solver.runSortFAS(true, -1);
+    fas_solver.runSortFAS();
+    //fas_solver.runSortFAS(true, -1);
 
     // show the linear arrangement
     for (int v : fas_solver.getLinearArrangement()) {
