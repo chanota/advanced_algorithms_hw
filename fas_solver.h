@@ -10,15 +10,12 @@ using PairSet = set<pair<int, int>>;
 
 class FasSolver {
     public:
-        FasSolver(const string data_path, int num_nodes, int num_arcs = -1);
+        FasSolver(const string data_path, int num_nodes);
         void loadGraph(const string &data_path);
-        bool hasDirectedEdge(int u, int v, bool binary_search);
+        bool hasDirectedEdge(int u, int v, bool binary_search = true);
         void sortFAS();
-        void runSortFAS(bool until_converge, int max_iters);
+        void runSortFAS(bool until_converge = false, int max_iters = -1);
         void computeFeedbackArcSet();
-        void once_forward();
-        // n=-1 run untile converge, otherwise run n times
-        void multiple_forward(int n);
         const vector<int> &getLinearArrangement() {
             return linear_arrangement;
         }

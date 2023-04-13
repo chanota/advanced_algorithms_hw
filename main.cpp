@@ -10,7 +10,7 @@
 #include <set>
 
 
-FasSolver::FasSolver(const string data_path, const int nn, const int an):num_arcs(an), num_nodes(nn) {
+FasSolver::FasSolver(const string data_path, const int nn):num_nodes(nn) {
     iterations = 0;
     graph.reserve(num_nodes);
     loadGraph(data_path);
@@ -44,7 +44,7 @@ void FasSolver::loadGraph(const string &data_path) {
     cout << "number of nodes: " << num_nodes << ", number of arcs: " << num_arcs << endl;
 }
 
-bool FasSolver::hasDirectedEdge(int u, int v, bool binary_search = true) {
+bool FasSolver::hasDirectedEdge(int u, int v, bool binary_search) {
     if (binary_search) {
         auto it = std::lower_bound(graph[u].begin(), graph[u].end(), v);
         if (it != graph[u].end() && *it == v) {
@@ -57,7 +57,7 @@ bool FasSolver::hasDirectedEdge(int u, int v, bool binary_search = true) {
     }
 }
 
-auto FasSolver::sortFAS() -> void {
+void FasSolver::sortFAS() {
     // main loop over each element of linear_arrangement
     for (int i = 1; i < num_nodes; i++) {
         int curr = linear_arrangement[i];
@@ -101,7 +101,7 @@ void FasSolver::computeFeedbackArcSet() {
     }
 }
 
-void FasSolver::runSortFAS(bool until_convergence = false, int max_iters = -1) {
+void FasSolver::runSortFAS(bool until_convergence, int max_iters) {
     // while new_fas_size < old_fas_size, keep running sortFAS
     if (until_convergence) {
         int old_fas_size = num_arcs + 1;
@@ -150,12 +150,11 @@ int main(int argc, char **argv) {
     }
 
     // show the feedback arc set
-    const PairSet &feedbackSet = fas_solver.getFAS();    
     std::cout << "\nFeedback arc set: ";
-    for (auto edge : feedbackSet) {
-        std::cout << "(" << edge.first << ", " << edge.second << ") ";
+    for (auto arc : fas_solver.getFAS()) {
+        std::cout << "(" << arc.first << ", " << arc.second << ") ";
     }
-    std::cout << "\nsize : " << fas_solver.getFASSize() << endl; 
+    std::cout << "\nfas size : " << fas_solver.getFASSize() << endl; 
     std::cout << "iterations: " << fas_solver.getIterations() << endl;
     auto end_time = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);

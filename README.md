@@ -1,3 +1,11 @@
-# advanced_algorithms_hw
-avoid using multiple_forward(-1) because it's slow.  
-annotate it and use s.multiple_forward(n) (where n means n iterations) or s.once_forward().
+# advanced_algorithms_hw1
+## SortFAS
+```./main <dataset> <num_nodes>``` 
+
+e.g:
+
+```./main wordassociation-2011 10617```
+
+```./main enron 69244```
+
+```./main example 7```
