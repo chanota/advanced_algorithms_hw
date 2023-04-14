@@ -47,11 +47,7 @@ void FasSolver::loadGraph(const string &data_path) {
 bool FasSolver::hasDirectedEdge(int u, int v, bool binary_search) {
     if (binary_search) {
         auto it = std::lower_bound(graph[u].begin(), graph[u].end(), v);
-        if (it != graph[u].end() && *it == v) {
-            return true;
-        } else {
-            return false;
-        }
+        return it != graph[u].end() && *it == v;
     } else {
         return find(graph[u].begin(), graph[u].end(), v) != graph[u].end();
     }
@@ -146,18 +142,18 @@ int main(int argc, char **argv) {
 
     // show the linear arrangement
     for (int v : fas_solver.getLinearArrangement()) {
-       std::cout << v << " ";
+       cout << v << " ";
     }
 
     // show the feedback arc set
-    std::cout << "\nFeedback arc set: ";
+    cout << "\nFeedback arc set: ";
     for (auto arc : fas_solver.getFAS()) {
-        std::cout << "(" << arc.first << ", " << arc.second << ") ";
+        cout << "(" << arc.first << ", " << arc.second << ") ";
     }
-    std::cout << "\nfas size : " << fas_solver.getFASSize() << endl; 
-    std::cout << "iterations: " << fas_solver.getIterations() << endl;
+    cout << "\nfas size : " << fas_solver.getFASSize() << endl; 
+    cout << "iterations: " << fas_solver.getIterations() << endl;
     auto end_time = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
-    std::cout << "run_time: " << duration.count() / 1000000.0 << " seconds" << endl;
+    cout << "run_time: " << duration.count() / 1000000.0 << " seconds" << endl;
     return 0;
 }
