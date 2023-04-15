@@ -6,8 +6,10 @@
 #include <numeric>
 #include <string>
 #include <vector>
-#include <chrono>
+#include <queue>
 #include <set>
+#include <chrono>
+
 
 
 FasSolver::FasSolver(const string data_path, const int nn):num_nodes(nn) {
@@ -135,6 +137,44 @@ void FasSolver::runSortFAS(bool until_convergence, int max_iters) {
     }
 }
 
+bool FasSolver::validateFAS() {
+    // 原图去掉fas中的边得到新图
+    AdjList new_graph(num_nodes);
+    for (int u = 0; u < num_nodes; u++) {
+        for (int v : graph[u]) {
+            if (feedback_arc_set.find(make_pair(u, v)) == feedback_arc_set.end()) {
+                new_graph[u].push_back(v);
+            }
+        }
+    }
+    // 使用拓扑排序判断新图是否有环
+    vector<int> in_degree(num_nodes, 0); // 记录每个节点的入度
+    for (int u = 0; u < num_nodes; u++) {
+        for (int v : new_graph[u]) {
+            in_degree[v]++;
+        }
+    }
+    queue<int> q;
+    for (int u = 0; u < num_nodes; u++) {
+        if (in_degree[u] == 0) {
+            q.push(u);
+        }
+    }
+    int visited_nodes = 0;
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        visited_nodes++;
+        for (int v : new_graph[u]) {
+            in_degree[v]--;
+            if (in_degree[v] == 0) {
+                q.push(v);
+            }
+        }
+    }
+    return visited_nodes == num_nodes;
+}
+
 int main(int argc, char **argv) {
     auto start_time = chrono::high_resolution_clock::now();
     // basename = argv[1], default: "wordassociation-2011"
@@ -151,9 +191,11 @@ int main(int argc, char **argv) {
     }
     const string data_path = "./graph_datasets/" + basename + ".txt";
     FasSolver fas_solver(data_path, num_nodes);
-
-    //fas_solver.runSortFAS();
-    fas_solver.runSortFAS(true, -1);
+    
+    // 运行一次
+    fas_solver.runSortFAS();
+    // 运行直到收敛
+    //fas_solver.runSortFAS(true, -1);
 
     // show the linear arrangement
     for (int v : fas_solver.getLinearArrangement()) {
@@ -170,5 +212,12 @@ int main(int argc, char **argv) {
     auto end_time = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time);
     cout << "run_time: " << duration.count() / 1000000.0 << " seconds" << endl;
+    // 验证算法有效性
+    cout << "验证算法有效性: ";
+    if (fas_solver.validateFAS()) {
+        cout << "去掉反馈弧集合后，图中无环，算法有效！" << endl;
+    } else {
+        cout << "去掉反馈弧集合后，图中有环，算法无效！" << endl;
+    }
     return 0;
 }

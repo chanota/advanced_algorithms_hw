@@ -16,6 +16,8 @@ class FasSolver {
         void sortFAS();
         void runSortFAS(bool until_converge = false, int max_iters = -1);
         void computeFeedbackArcSet();
+        // 验证算法有效性，判断原图移除feedback_arc_set后是否有回路
+        bool validateFAS();
         const vector<int> &getLinearArrangement() {
             return linear_arrangement;
         }
