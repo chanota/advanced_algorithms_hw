@@ -62,9 +62,24 @@ void FasSolver::sortFAS() {
         int best_pos = i;
         // check all candidate positions before i
         for (int j = i - 1; j >= 0; j--) {
+            // 三种方式，当两个节点间存在相互指向的边时，前两种方式对最终结果有影响
+            // 1. （原文伪代码）优先执行val--
+            // if (hasDirectedEdge(curr, linear_arrangement[j])) {
+            //     val--;
+            // } else if (hasDirectedEdge(linear_arrangement[j], curr)) {
+            //     val++;
+            // }
+            // 2. 优先执行val++
+            // if (hasDirectedEdge(linear_arrangement[j], curr)) {
+            //     val++;
+            // } else if (hasDirectedEdge(curr, linear_arrangement[j])) {
+            //     val--;
+            // }
+            // 3. 既执行val++又执行val--
             if (hasDirectedEdge(curr, linear_arrangement[j])) {
                 val--;
-            } else if (hasDirectedEdge(linear_arrangement[j], curr)) {
+            }
+            if (hasDirectedEdge(linear_arrangement[j], curr)) {
                 val++;
             }
             if (val <= min) {
@@ -137,8 +152,8 @@ int main(int argc, char **argv) {
     const string data_path = "./graph_datasets/" + basename + ".txt";
     FasSolver fas_solver(data_path, num_nodes);
 
-    fas_solver.runSortFAS();
-    //fas_solver.runSortFAS(true, -1);
+    //fas_solver.runSortFAS();
+    fas_solver.runSortFAS(true, -1);
 
     // show the linear arrangement
     for (int v : fas_solver.getLinearArrangement()) {
